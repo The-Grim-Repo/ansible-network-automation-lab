@@ -1,0 +1,133 @@
+---
+# Ansible Inventory for Nexus Lab Environment
+# This file defines all network devices and their connection parameters
+
+all:
+  children:
+    # Data Center 1 Switches
+    dc1:
+      children:
+        dc1_core:
+          hosts:
+            nx_dc1_core_01:
+              ansible_host: 10.0.100.10
+              ansible_user: admin
+              ansible_ssh_pass: admin
+              ansible_connection: network_cli
+              ansible_network_os: nxos
+              ansible_ssh_common_args: '-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'
+            nx_dc1_core_02:
+              ansible_host: 10.0.100.11
+              ansible_user: admin
+              ansible_ssh_pass: admin
+              ansible_connection: network_cli
+              ansible_network_os: nxos
+              ansible_ssh_common_args: '-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'
+        
+        dc1_distribution:
+          hosts:
+            nx_dc1_dis_01:
+              ansible_host: 10.0.100.12
+              ansible_user: admin
+              ansible_ssh_pass: admin
+              ansible_connection: network_cli
+              ansible_network_os: nxos
+              ansible_ssh_common_args: '-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'
+            nx_dc1_dis_02:
+              ansible_host: 10.0.100.13
+              ansible_user: admin
+              ansible_ssh_pass: admin
+              ansible_connection: network_cli
+              ansible_network_os: nxos
+              ansible_ssh_common_args: '-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'
+        
+        dc1_access:
+          hosts:
+            nx_dc1_acc_01:
+              ansible_host: 10.0.100.14
+              ansible_user: admin
+              ansible_ssh_pass: admin
+              ansible_connection: network_cli
+              ansible_network_os: nxos
+              ansible_ssh_common_args: '-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'
+            nx_dc1_acc_02:
+              ansible_host: 10.0.100.15
+              ansible_user: admin
+              ansible_ssh_pass: admin
+              ansible_connection: network_cli
+              ansible_network_os: nxos
+              ansible_ssh_common_args: '-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'
+        
+        dc1_border:
+          hosts:
+            nx_bdr_01:
+              ansible_host: 10.0.100.16
+              ansible_user: admin
+              ansible_ssh_pass: admin
+              ansible_connection: network_cli
+              ansible_network_os: nxos
+              ansible_ssh_common_args: '-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'
+
+    # Data Center 2 Switches
+    dc2:
+      children:
+        dc2_core:
+          hosts:
+            nx_dc2_core_01:
+              ansible_host: 10.0.100.17
+              ansible_user: admin
+              ansible_ssh_pass: admin
+              ansible_connection: network_cli
+              ansible_network_os: nxos
+              ansible_ssh_common_args: '-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'
+            nx_dc2_core_02:
+              ansible_host: 10.0.100.18
+              ansible_user: admin
+              ansible_ssh_pass: admin
+              ansible_connection: network_cli
+              ansible_network_os: nxos
+              ansible_ssh_common_args: '-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'
+        
+        dc2_distribution:
+          hosts:
+            nx_dc2_dis_01:
+              ansible_host: 10.0.100.19
+              ansible_user: admin
+              ansible_ssh_pass: admin
+              ansible_connection: network_cli
+              ansible_network_os: nxos
+              ansible_ssh_common_args: '-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'
+            nx_dc2_dis_02:
+              ansible_host: 10.0.100.20
+              ansible_user: admin
+              ansible_ssh_pass: admin
+              ansible_connection: network_cli
+              ansible_network_os: nxos
+              ansible_ssh_common_args: '-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'
+        
+        dc2_access:
+          hosts:
+            nx_dc2_acc_01:
+              ansible_host: 10.0.100.21
+              ansible_user: admin
+              ansible_ssh_pass: admin
+              ansible_connection: network_cli
+              ansible_network_os: nxos
+              ansible_ssh_common_args: '-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'
+            nx_dc2_acc_02:
+              ansible_host: 10.0.100.22
+              ansible_user: admin
+              ansible_ssh_pass: admin
+              ansible_connection: network_cli
+              ansible_network_os: nxos
+              ansible_ssh_common_args: '-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'
+
+  vars:
+    # Global variables for all devices
+    ansible_user: admin
+    ansible_ssh_pass: admin
+    ansible_connection: network_cli
+    ansible_network_os: nxos
+    ansible_ssh_common_args: '-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'
+    ansible_command_timeout: 30
+    ansible_connect_timeout: 10

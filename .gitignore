@@ -1,0 +1,86 @@
+# Ansible Network Automation Lab - .gitignore
+
+# Virtual Environment
+ansible-env/
+venv/
+env/
+.venv/
+.env/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Ansible
+.ansible/
+*.retry
+ansible.cfg
+hosts
+hosts.yml
+group_vars/
+host_vars/
+roles/
+playbooks/*.retry
+
+# SSH Keys and Secrets
+*.pem
+*.key
+id_rsa*
+*.ppk
+secrets.yml
+vault.yml
+*.vault
+
+# Logs
+*.log
+logs/
+ansible.log
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
+
+# Backup files
+*.bak
+*.backup
+*.old
+
+# Network device backups
+backups/
+config_backups/
