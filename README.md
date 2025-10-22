@@ -92,6 +92,12 @@ This project demonstrates network automation using Ansible to manage 13 Cisco Ne
 - Ubuntu Server with Python 3.12+
 - SSH access to all network devices
 - Basic understanding of YAML and network concepts
+- Git and GitHub account (for version control)
+
+### Repository Information
+- **GitHub**: [The-Grim-Repo/ansible-network-automation-lab](https://github.com/The-Grim-Repo/ansible-network-automation-lab)
+- **Purpose**: Network automation learning lab
+- **Devices**: 13 Cisco Nexus switches across 2 data centers
 
 ### Environment Setup
 
@@ -233,6 +239,57 @@ ansible-inventory -i inventory.yml --list --host dc1_core
 - **Module Usage**: Specialized network modules
 - **Error Handling**: Timeout and connection management
 - **Security**: Authentication and encryption considerations
+
+## 🔄 Git Workflow
+
+### Repository Setup
+```bash
+# Clone the repository
+git clone https://github.com/The-Grim-Repo/ansible-network-automation-lab.git
+cd ansible-network-automation-lab
+
+# Set up virtual environment
+python3 -m venv ~/ansible-env
+source ~/ansible-env/bin/activate
+pip install ansible
+```
+
+### Daily Workflow
+```bash
+# Check status
+git status
+
+# Add changes
+git add .
+
+# Commit changes
+git commit -m "Description of changes"
+
+# Push to GitHub
+git push origin main
+
+# Pull latest changes
+git pull origin main
+```
+
+### Branching Strategy
+```bash
+# Create feature branch
+git checkout -b feature/new-playbook
+
+# Work on feature
+# ... make changes ...
+
+# Commit and push feature
+git add .
+git commit -m "Add new playbook for device configuration"
+git push origin feature/new-playbook
+
+# Merge back to main
+git checkout main
+git merge feature/new-playbook
+git push origin main
+```
 
 ## 🚀 Next Steps
 
