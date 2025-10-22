@@ -1,0 +1,15 @@
+---
+# Raw Command Test Playbook
+# This playbook uses the raw module to test basic connectivity
+
+- name: "Test basic connectivity with raw commands"
+  hosts: all
+  gather_facts: false
+  tasks:
+    - name: "Get device hostname using raw command"
+      raw: "show hostname"
+      register: hostname_output
+
+    - name: "Display hostname"
+      debug:
+        msg: "Device hostname: {{ hostname_output.stdout_lines[0] }}"

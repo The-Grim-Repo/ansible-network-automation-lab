@@ -1,0 +1,16 @@
+---
+# Simple Ansible Playbook Test
+# This playbook tests basic connectivity and gathers simple information
+
+- name: "Test basic connectivity and gather device information"
+  hosts: all
+  gather_facts: false
+  tasks:
+    - name: "Get device hostname"
+      cisco.nxos.nxos_command:
+        commands: "show hostname"
+      register: hostname_output
+
+    - name: "Display hostname"
+      debug:
+        msg: "Device hostname: {{ hostname_output.stdout_lines[0] }}"

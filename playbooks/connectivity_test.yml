@@ -1,0 +1,10 @@
+---
+# Basic Connectivity Test Playbook
+# This playbook tests basic connectivity to network devices
+
+- name: "Test basic connectivity to network devices"
+  hosts: all
+  gather_facts: false
+  tasks:
+    - name: "Test connectivity with ping module"
+      ping:

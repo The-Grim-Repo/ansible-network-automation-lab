@@ -1,0 +1,33 @@
+---
+# First Ansible Playbook: Device Information Gathering
+# This playbook demonstrates basic Ansible concepts by gathering
+# information from all network devices in our lab environment
+
+- name: "Gather basic information from all network devices"
+  hosts: all
+  gather_facts: false
+  vars:
+    # No variables needed for this simple playbook
+  tasks:
+    - name: "Get device hostname"
+      cisco.nxos.nxos_command:
+        commands: "show hostname"
+      register: hostname_output
+
+    - name: "Get device version"
+      cisco.nxos.nxos_command:
+        commands: "show version"
+      register: version_output
+
+    - name: "Get device uptime"
+      cisco.nxos.nxos_command:
+        commands: "show version | include uptime"
+      register: uptime_output
+
+    - name: "Display device information"
+      debug:
+        msg: |
+          Device: {{ hostname_output.stdout_lines[0] }}
+          Version: {{ version_output.stdout_lines[0] }}
+          Uptime: {{ uptime_output.stdout_lines[0] }}
+          IP Address: {{ inventory_hostname }}
