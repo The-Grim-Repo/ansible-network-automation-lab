@@ -1,0 +1,94 @@
+---
+# ============================================================================
+# CONFIGURE INTERFACES WITH LOOPS
+# ============================================================================
+# This playbook demonstrates Ansible loops (iterating over lists)
+# 
+# Key Concepts:
+# - loop: Iterate over a list of items
+# - item: Reference the current item in the loop
+# - with_items: Alternative loop syntax (older)
+# - Variables can contain lists for looping
+#
+# WHY LOOPS ARE POWERFUL:
+# Instead of writing 5 tasks to configure 5 interfaces, write 1 task
+# and loop it 5 times. Much cleaner and more maintainable!
+# ============================================================================
+
+- name: "Configure interfaces with loops (demonstration)"
+  hosts: dc1_core
+  gather_facts: false
+  
+  vars:
+    # Define a list of interfaces to configure
+    # This is a YAML list - each item starts with a dash (-)
+    interfaces_to_configure:
+      - name: "Eth1/1"
+        description: "Uplink to DC2"
+      - name: "Eth1/2"
+        description: "Backup Uplink to DC2"
+      - name: "Eth1/3"
+        description: "Access Switch 01"
+      - name: "Eth1/4"
+        description: "Access Switch 02"
+      - name: "Eth1/5"
+        description: "Reserved for Future Use"
+  
+  tasks:
+    # Task 1: Display what we're about to do
+    - name: "Show which interfaces we'll configure"
+      debug:
+        msg: "Will configure interface {{ item.name }} with description: {{ item.description }}"
+      # loop: Tells Ansible to repeat this task for each item in the list
+      # item: Reference to the current item (access via {{ item }})
+      loop: "{{ interfaces_to_configure }}"
+
+    # Task 2: Get current interface status (looped command)
+    - name: "Get current interface status before configuration"
+      cisco.nxos.nxos_command:
+        commands: "show interface {{ item.name }} brief"
+      # Loop over the interfaces list
+      # For each interface, run the show command
+      loop: "{{ interfaces_to_configure }}"
+      register: interface_status
+
+    # Task 3: Display the results
+    - name: "Show interface status results"
+      debug:
+        msg: "Interface {{ item.item.name }} status: {{ item.stdout_lines[0][0:80] }}"
+      # When you loop and use register, results come back as a list
+      # item.item accesses the original loop item
+      loop: "{{ interface_status.results }}"
+
+    # Task 4: Configure interfaces (in DRY run mode - no actual changes)
+    # NOTE: This uses nxos_config module which DOES make changes
+    # We're using check mode (--check flag) to preview without making changes
+    - name: "Configure interface descriptions"
+      cisco.nxos.nxos_config:
+        lines:
+          - "description {{ item.description }}"
+        parents: "interface {{ item.name }}"
+      # Loop through each interface in the list
+      loop: "{{ interfaces_to_configure }}"
+      # check_mode: Only show what WOULD happen, don't actually do it
+      # This is safer for learning!
+      check_mode: true
+      register: config_results
+
+    # Task 5: Show what configuration changes would be made
+    - name: "Show configuration changes (what WOULD be applied)"
+      debug:
+        msg: |
+          Interface: {{ item.item.name }}
+          Description: {{ item.item.description }}
+          Changes to apply: {{ item.updates | default(['No changes']) }}
+      loop: "{{ config_results.results }}"
+      when: item.updates is defined and item.updates | length > 0
+
+    # Task 6: Summary of loop
+    - name: "Loop Summary"
+      debug:
+        msg: |
+          ✓ Successfully demonstrated loops!
+          Looped through {{ interfaces_to_configure | length }} interfaces
+          Each interface was processed with its own configuration
