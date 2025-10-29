@@ -1,0 +1,81 @@
+---
+# ============================================================================
+# DEVICE STATUS CHECK WITH CONDITIONALS
+# ============================================================================
+# This playbook demonstrates Ansible conditionals (if/then logic)
+# It checks device status and displays warnings based on thresholds
+# 
+# Key Concepts:
+# - Variables store calculated values
+# - Conditionals (when:) make decisions based on variables
+# - Different actions happen based on conditions
+# ============================================================================
+
+- name: "Check device status with conditionals"
+  hosts: all
+  gather_facts: false
+  
+  tasks:
+    # Task 1: Gather version info
+    - name: "Get device information"
+      cisco.nxos.nxos_command:
+        commands: 
+          - "show version"
+          - "show interface brief"
+      register: device_info
+
+    # Task 2: Get hostname
+    - name: "Get device hostname"
+      cisco.nxos.nxos_command:
+        commands: "show hostname"
+      register: hostname_output
+
+    # Task 3: Calculate interface counts (variables)
+    - name: "Calculate interface metrics"
+      set_fact:
+        device_name: "{{ hostname_output.stdout_lines[0][0] }}"
+        eth_up: "{{ (device_info.stdout_lines[1] | select('match', '^Eth.*\\s+up\\s+') | list | length) }}"
+        eth_down: "{{ (device_info.stdout_lines[1] | select('match', '^Eth.*\\s+down\\s+') | list | length) }}"
+        mgmt_up: "{{ (device_info.stdout_lines[1] | select('match', '^mgmt.*\\s+up\\s+') | list | length) }}"
+
+    # Task 4: Display device status with conditional logic
+    - name: "Display device status"
+      debug:
+        msg:
+          - ""
+          - "Device: {{ device_name }}"
+          - "Ethernet Interfaces UP: {{ eth_up }}"
+          - "Ethernet Interfaces DOWN: {{ eth_down }}"
+          - "Management Interfaces UP: {{ mgmt_up }}"
+
+    # Task 5: Check if many interfaces are down (CONDITIONAL)
+    # WHY: This condition checks if eth_down exceeds a threshold
+    # When: Only runs this task if the condition is TRUE
+    - name: "WARNING: Many ethernet interfaces are down!"
+      debug:
+        msg: "⚠️  ALERT: {{ eth_down }} interfaces are DOWN! Consider investigating."
+      when: eth_down | int > 30
+
+    # Task 6: Check if all management is up (CONDITIONAL)
+    # WHY: Verify management interface is available
+    # When: Only runs if mgmt_up >= 1 (at least one management interface up)
+    - name: "OK: Management interface is up"
+      debug:
+        msg: "✓ Management interface status OK"
+      when: mgmt_up | int >= 1
+
+    # Task 7: Check if ethernet interfaces have good uptime
+    # WHY: Alert if too many interfaces are down
+    # When: Multi-condition check - only runs if BOTH conditions are true
+    - name: "CRITICAL: Device interface health is poor"
+      debug:
+        msg: "🔴 CRITICAL: Only {{ eth_up }}/{{ (eth_up | int) + (eth_down | int) }} interfaces operational!"
+      when: 
+        - eth_down | int > 50
+        - eth_up | int < 20
+
+    - name: "HEALTHY: Device interfaces are operating normally"
+      debug:
+        msg: "🟢 HEALTHY: {{ eth_up }} interfaces UP, {{ eth_down }} interfaces DOWN"
+      when:
+        - eth_down | int <= 50 or eth_up | int >= 15
