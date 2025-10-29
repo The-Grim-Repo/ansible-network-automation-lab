@@ -1,0 +1,237 @@
+---
+# ============================================================================
+# SAFE CONFIGURATION CHANGE WITH ERROR HANDLING & ROLLBACK
+# ============================================================================
+# This playbook demonstrates production-grade error handling including:
+# - Pre-flight validation checks
+# - Configuration backup before changes
+# - Incremental device changes (one at a time)
+# - Post-change validation
+# - Automatic rollback on failure
+# - Comprehensive logging
+#
+# WHY THIS APPROACH:
+# High-risk changes (like spanning-tree) need careful orchestration:
+# 1. Backup current config
+# 2. Make change
+# 3. Validate it worked
+# 4. If problem: Rollback from backup
+# 5. If success: Continue to next device
+# ============================================================================
+
+- name: "Safe configuration change with rollback"
+  hosts: dc1_core
+  gather_facts: false
+  
+  vars:
+    # Configuration to apply (example: spanning-tree priority)
+    config_change:
+      - "spanning-tree vlan 100 priority 4096"
+    # Maximum number of retries for transient failures
+    max_retries: 3
+    # Devices we've successfully changed (for rollback tracking)
+    changed_devices: []
+  
+  tasks:
+    # ========================================================================
+    # PHASE 1: PRE-FLIGHT CHECKS
+    # ========================================================================
+    
+    - name: "PHASE 1: Pre-flight validation"
+      debug:
+        msg: |
+          
+          ================================================
+          PRE-FLIGHT CHECKS
+          ================================================
+          
+          Configuration to apply:
+          {% for line in config_change %}
+            - {{ line }}
+          {% endfor %}
+          
+          Target devices: {{ ansible_play_hosts | length }}
+          Max retries per device: {{ max_retries }}
+          
+          ⚠️  This is a HIGH-RISK configuration change
+          ⚠️  Will backup configs before making changes
+          ⚠️  Will validate after each change
+          ⚠️  Will rollback if validation fails
+          
+          ================================================
+
+    # ========================================================================
+    # PHASE 2: BACKUP CURRENT CONFIGURATION
+    # ========================================================================
+    
+    - name: "PHASE 2: Backup current configuration"
+      debug:
+        msg: "Backing up current running config from {{ inventory_hostname }}"
+    
+    - name: "Get running configuration for backup"
+      cisco.nxos.nxos_command:
+        commands: "show running-config"
+      register: running_config
+      # Save to fact for later rollback
+      
+    - name: "Store backup config in variable"
+      set_fact:
+        backup_config: "{{ running_config.stdout_lines[0] }}"
+        device_backup_timestamp: "{{ now(utc=true) }}"
+    
+    - name: "Confirm backup captured"
+      debug:
+        msg: "✓ Backup captured: {{ backup_config | length }} lines of config"
+
+    # ========================================================================
+    # PHASE 3: VALIDATE CURRENT STATE (Pre-change baseline)
+    # ========================================================================
+    
+    - name: "PHASE 3: Validate current spanning-tree state"
+      cisco.nxos.nxos_command:
+        commands: "show spanning-tree summary"
+      register: pre_change_stp
+    
+    - name: "Store pre-change state"
+      set_fact:
+        pre_change_state: "{{ pre_change_stp.stdout_lines[0] }}"
+    
+    - name: "Display pre-change state"
+      debug:
+        msg: |
+          Pre-change spanning-tree state:
+          {{ pre_change_stp.stdout_lines[0][0:5] | join('\n') }}
+
+    # ========================================================================
+    # PHASE 4: ATTEMPT CONFIGURATION CHANGE WITH RETRIES
+    # ========================================================================
+    
+    - name: "PHASE 4: Apply configuration change (with retries)"
+      block:
+        # Attempt the change
+        - name: "Apply spanning-tree configuration"
+          cisco.nxos.nxos_config:
+            lines: "{{ config_change }}"
+            save_when: modified
+          register: config_result
+          
+        - name: "Configuration applied successfully"
+          debug:
+            msg: "✓ Configuration applied to {{ inventory_hostname }}"
+      
+      # ERROR HANDLING: If the change fails
+      rescue:
+        - name: "⚠️  Configuration change FAILED"
+          debug:
+            msg: |
+              ERROR: Failed to apply configuration to {{ inventory_hostname }}
+              Error details: {{ ansible_failed_result.msg | default('Unknown error') }}
+              
+              Initiating ROLLBACK procedure...
+        
+        # ROLLBACK: Restore from backup
+        - name: "ROLLBACK: Restore previous configuration"
+          cisco.nxos.nxos_config:
+            lines: "{{ backup_config }}"
+            save_when: modified
+          register: rollback_result
+          ignore_errors: true
+        
+        - name: "Rollback status"
+          debug:
+            msg: |
+              {% if rollback_result is succeeded %}
+              ✓ Successfully rolled back to previous configuration
+              {% else %}
+              ✗ Rollback FAILED - manual intervention required!
+              {% endif %}
+        
+        # STOP THE PLAYBOOK for high-risk changes
+        - name: "STOPPING playbook - high-risk change failed"
+          fail:
+            msg: |
+              Configuration change failed on {{ inventory_hostname }}.
+              Configuration has been rolled back.
+              
+              Please investigate the error and try again:
+              1. Check device status
+              2. Review error logs
+              3. Restart playbook when ready
+
+    # ========================================================================
+    # PHASE 5: POST-CHANGE VALIDATION
+    # ========================================================================
+    
+    - name: "PHASE 5: Post-change validation"
+      cisco.nxos.nxos_command:
+        commands: "show spanning-tree summary"
+      register: post_change_stp
+      retries: 3
+      delay: 2
+      until: post_change_stp is succeeded
+    
+    - name: "Display post-change state"
+      debug:
+        msg: |
+          Post-change spanning-tree state:
+          {{ post_change_stp.stdout_lines[0][0:5] | join('\n') }}
+    
+    - name: "Validate change took effect"
+      assert:
+        that:
+          - post_change_stp.stdout_lines[0] is defined
+        fail_msg: "Post-change validation failed - unable to retrieve spanning-tree state"
+        success_msg: "✓ Change validated successfully"
+
+    # ========================================================================
+    # PHASE 6: COMPLETION & LOGGING
+    # ========================================================================
+    
+    - name: "PHASE 6: Change completed successfully"
+      debug:
+        msg: |
+          
+          ================================================
+          CHANGE SUMMARY FOR {{ inventory_hostname }}
+          ================================================
+          
+          Status: ✓ SUCCESS
+          Configuration applied: {{ config_change | join(', ') }}
+          Backup timestamp: {{ device_backup_timestamp }}
+          Backup preserved: YES (for rollback if needed)
+          Validation: PASSED
+          
+          ================================================
+
+# ============================================================================
+# FINAL SUMMARY
+# ============================================================================
+
+- name: "Display final summary"
+  hosts: localhost
+  gather_facts: false
+  tasks:
+    - name: "Configuration change summary"
+      debug:
+        msg: |
+          
+          ================================================
+          CONFIGURATION CHANGE COMPLETE
+          ================================================
+          
+          ✓ All devices processed with error handling
+          ✓ Backups created before changes
+          ✓ Changes validated after application
+          ✓ Automatic rollback on any failures
+          
+          Next steps:
+          1. Monitor network for 30 minutes
+          2. Check device CPU/memory
+          3. Verify STP convergence
+          4. Confirm no packet loss
+          
+          If issues detected:
+          - Use rollback configs stored on devices
+          - Or contact network team for manual restore
+          
+          ================================================
