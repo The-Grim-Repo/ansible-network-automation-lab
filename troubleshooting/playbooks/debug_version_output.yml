@@ -1,0 +1,14 @@
+---
+- name: "Debug version output"
+  hosts: dc1_core
+  gather_facts: false
+  
+  tasks:
+    - name: "Get device version information"
+      cisco.nxos.nxos_command:
+        commands: "show version"
+      register: version_output
+
+    - name: "Display RAW output to see exact format"
+      debug:
+        msg: "{{ version_output.stdout_lines }}"

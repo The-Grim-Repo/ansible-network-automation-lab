@@ -1,0 +1,17 @@
+---
+- name: "Debug all interface types"
+  hosts: dc1_core
+  gather_facts: false
+  
+  tasks:
+    - name: "Get interface brief"
+      cisco.nxos.nxos_command:
+        commands: "show interface brief"
+      register: interface_output
+
+    - name: "Show line-by-line to identify interface patterns"
+      debug:
+        msg: "{{ item }}"
+      loop: "{{ interface_output.stdout_lines[0] }}"
+      when: 
+        - item is search('^(Eth|Po|lo|mgmt)')

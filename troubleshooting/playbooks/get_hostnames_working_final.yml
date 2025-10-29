@@ -1,0 +1,14 @@
+---
+- name: "Get hostnames from all devices - Working Version"
+  hosts: all
+  gather_facts: false
+  vars:
+    ansible_connection: ssh
+  tasks:
+    - name: "Get device hostname using raw module"
+      raw: "show hostname"
+      register: hostname_output
+
+    - name: "Display hostname"
+      debug:
+        msg: "Device hostname: {{ hostname_output.stdout_lines[0] }}"

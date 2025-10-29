@@ -1,0 +1,13 @@
+---
+- name: "Test simple nxos_command"
+  hosts: dc1_core
+  gather_facts: false
+  tasks:
+    - name: "Get device hostname"
+      nxos_command:
+        commands: "show hostname"
+      register: hostname_output
+
+    - name: "Display hostname"
+      debug:
+        msg: "Device hostname: {{ hostname_output.stdout_lines[0] }}"

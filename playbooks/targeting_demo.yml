@@ -1,0 +1,37 @@
+---
+# ============================================================================
+# PLAYBOOK TARGETING DEMONSTRATION
+# ============================================================================
+# This playbook demonstrates how to target specific groups and hosts in your
+# Ansible inventory. For detailed explanations, see:
+# - ANSIBLE_PLAYBOOK_GUIDE.md (Playbook Structure)
+# - INVENTORY_STRUCTURE.md (Understanding Inventory Groups)
+# ============================================================================
+
+- name: "Playbook Targeting Demonstration"
+  # 'hosts: all' targets all devices in the inventory
+  # You can also use: 'hosts: dc1_core', 'hosts: dc1', 'hosts: all', etc.
+  # Use --limit flag to narrow down further: ansible-playbook ... --limit dc1_core
+  hosts: all
+  gather_facts: false  # Don't gather system facts - faster for network devices
+  
+  tasks:
+    # Task 1: Execute 'show hostname' command on target devices
+    - name: "Get device hostname"
+      # cisco.nxos.nxos_command: Cisco NX-OS specific module
+      # Requires: ansible_connection: network_cli (from inventory)
+      cisco.nxos.nxos_command:
+        commands: "show hostname"
+      # 'register:' stores the command output in a variable for later use
+      # This variable contains: stdout, stdout_lines, etc.
+      register: hostname_output
+
+    # Task 2: Display the stored hostname using Jinja2 templating
+    - name: "Display hostname"
+      debug:
+        # {{ }} = Jinja2 templating - tells Ansible to evaluate the expression
+        # hostname_output = Variable we registered in Task 1
+        # .stdout_lines = List of output lines from the command
+        # [0] = Index 0 = first line of the output
+        # Example: If 'show hostname' returns "NX_DC1_Core_01", then [0] gets that line
+        msg: "Device: {{ hostname_output.stdout_lines[0] }}"

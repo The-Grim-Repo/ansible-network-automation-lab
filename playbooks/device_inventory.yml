@@ -1,0 +1,47 @@
+---
+- name: "Gather comprehensive device information"
+  hosts: all
+  gather_facts: false
+  tasks:
+    - name: "Get device hostname"
+      cisco.nxos.nxos_command:
+        commands: "show hostname"
+      register: hostname_output
+
+    - name: "Get device version"
+      cisco.nxos.nxos_command:
+        commands: "show version"
+      register: version_output
+
+    - name: "Get device uptime"
+      cisco.nxos.nxos_command:
+        commands: "show system uptime"
+      register: uptime_output
+
+    - name: "Get interface brief"
+      cisco.nxos.nxos_command:
+        commands: "show interface brief"
+      register: interface_output
+
+    - name: "Get interface utilization"
+      cisco.nxos.nxos_command:
+        commands: "show interface counters"
+      register: interface_counters
+
+    - name: "Display device information"
+      debug:
+        msg: |
+          Device: {{ hostname_output.stdout_lines[0] }}
+          Interface Count: {{ interface_output.stdout_lines | length }}
+
+    - name: "Display version information"
+      debug:
+        msg: "Version: {{ version_output.stdout_lines }}"
+
+    - name: "Display uptime information"
+      debug:
+        msg: "Uptime: {{ uptime_output.stdout_lines }}"
+
+    - name: "Display interface utilization"
+      debug:
+        msg: "Interface Counters: {{ interface_counters.stdout_lines }}"

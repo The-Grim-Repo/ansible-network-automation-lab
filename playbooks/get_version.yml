@@ -1,0 +1,87 @@
+---
+# ============================================================================
+# GET COMPREHENSIVE DEVICE INFORMATION
+# ============================================================================
+# This playbook gathers comprehensive device information including:
+# - Device hostname and version
+# - System uptime
+# - Interface counts by type and status (UP/DOWN)
+# 
+# Output is consolidated per device for easy reading
+# ============================================================================
+
+- name: "Gather comprehensive device information"
+  hosts: all
+  gather_facts: false
+  
+  tasks:
+    # Task 1: Execute 'show version' command
+    - name: "Get device version information"
+      cisco.nxos.nxos_command:
+        commands: "show version"
+      register: version_output
+
+    # Task 2: Execute 'show interface brief' command
+    - name: "Get interface brief"
+      cisco.nxos.nxos_command:
+        commands: "show interface brief"
+      register: interface_output
+
+    # Task 3: Get hostname for display
+    - name: "Get device hostname"
+      cisco.nxos.nxos_command:
+        commands: "show hostname"
+      register: hostname_output
+
+    # Task 4: Display comprehensive device information
+    - name: "Display comprehensive device inventory"
+      vars:
+        device_name: "{{ hostname_output.stdout_lines[0][0] }}"
+        software_version: "{{ (version_output.stdout_lines[0] | select('match', '.*NXOS: version.*') | list)[0] | regex_replace('^\\s+', '') }}"
+        system_uptime: "{{ (version_output.stdout_lines[0] | select('match', '.*Kernel uptime.*') | list)[0] | regex_replace('^\\s+', '') }}"
+        eth_up: "{{ (interface_output.stdout_lines[0] | select('match', '^Eth.*\\s+up\\s+') | list | length) }}"
+        eth_down: "{{ (interface_output.stdout_lines[0] | select('match', '^Eth.*\\s+down\\s+') | list | length) }}"
+        po_up: "{{ (interface_output.stdout_lines[0] | select('match', '^Po\\d+.*\\s+up\\s+') | list | length) }}"
+        po_down: "{{ (interface_output.stdout_lines[0] | select('match', '^Po\\d+.*\\s+down\\s+') | list | length) }}"
+        lo_up: "{{ (interface_output.stdout_lines[0] | select('match', '^lo\\d+.*\\s+up\\s+') | list | length) }}"
+        lo_down: "{{ (interface_output.stdout_lines[0] | select('match', '^lo\\d+.*\\s+down\\s+') | list | length) }}"
+        mgmt_up: "{{ (interface_output.stdout_lines[0] | select('match', '^mgmt.*\\s+up\\s+') | list | length) }}"
+        mgmt_down: "{{ (interface_output.stdout_lines[0] | select('match', '^mgmt.*\\s+down\\s+') | list | length) }}"
+        sub_up: "{{ (interface_output.stdout_lines[0] | select('match', '^Eth\\d+/\\d+\\.\\d+.*\\s+up\\s+') | list | length) }}"
+        sub_down: "{{ (interface_output.stdout_lines[0] | select('match', '^Eth\\d+/\\d+\\.\\d+.*\\s+down\\s+') | list | length) }}"
+      debug:
+        msg:
+          - ""
+          - "============================================================"
+          - "                   DEVICE INFORMATION"
+          - "============================================================"
+          - "Device: {{ device_name }}"
+          - "Software Version: {{ software_version }}"
+          - "System Uptime: {{ system_uptime }}"
+          - ""
+          - "============================================================"
+          - "                   INTERFACE SUMMARY"
+          - "============================================================"
+          - ""
+          - "Ethernet Interfaces:"
+          - "  UP:   {{ eth_up }}"
+          - "  DOWN: {{ eth_down }}"
+          - ""
+          - "Port-Channel Interfaces:"
+          - "  UP:   {{ po_up }}"
+          - "  DOWN: {{ po_down }}"
+          - ""
+          - "Loopback Interfaces:"
+          - "  UP:   {{ lo_up }}"
+          - "  DOWN: {{ lo_down }}"
+          - ""
+          - "Management Interfaces:"
+          - "  UP:   {{ mgmt_up }}"
+          - "  DOWN: {{ mgmt_down }}"
+          - ""
+          - "Subinterfaces:"
+          - "  UP:   {{ sub_up }}"
+          - "  DOWN: {{ sub_down }}"
+          - ""
+          - "============================================================"
+          - ""

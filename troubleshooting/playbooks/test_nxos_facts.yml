@@ -1,0 +1,13 @@
+---
+- name: "Test nxos_facts module"
+  hosts: dc1_core
+  gather_facts: false
+  tasks:
+    - name: "Gather device facts"
+      cisco.nxos.nxos_facts:
+        gather_subset: all
+      register: device_facts
+
+    - name: "Display hostname from facts"
+      debug:
+        msg: "Device hostname: {{ device_facts.ansible_facts.ansible_net_hostname }}"

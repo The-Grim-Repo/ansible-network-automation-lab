@@ -1,0 +1,12 @@
+---
+- name: "Get hostnames using raw module"
+  hosts: all
+  gather_facts: false
+  tasks:
+    - name: "Get device hostname using raw command"
+      raw: "show hostname"
+      register: hostname_output
+
+    - name: "Display hostname"
+      debug:
+        msg: "Device hostname: {{ hostname_output.stdout_lines[0] }}"

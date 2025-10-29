@@ -1,0 +1,10 @@
+---
+# Simple Starting Playbook
+# Let's start with something basic and build up
+
+- name: "Simple connectivity test"
+  hosts: all
+  gather_facts: false
+  tasks:
+    - name: "Test if we can reach the devices"
+      ping:
